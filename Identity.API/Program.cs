@@ -1,3 +1,8 @@
+using Identity.API.Database;
+using Identity.API.Extensions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+
 namespace Identity.API;
 
 public class Program
@@ -9,23 +14,29 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
-        
+        builder.Services.AddAuthorization();
+        builder.Services.AddAuthentication().AddCookie(IdentityConstants.ApplicationScheme);
+
+        builder.Services.AddIdentityCore<IdentityUser>()
+            .AddEntityFrameworkStores<AppDbContext>()
+            .AddApiEndpoints();
+
+        builder.Services.AddDbContext<AppDbContext>(options
+            => options.UseNpgsql(builder.Configuration.GetConnectionString("Docker-Postgers")));
 
         var app = builder.Build();
 
-        // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
+            app.ApplyMigration();
         }
 
         app.UseHttpsRedirection();
 
-        app.UseAuthorization();
 
-
-        app.MapControllers();
+        app.MapIdentityApi<IdentityUser>();
 
         app.Run();
     }
